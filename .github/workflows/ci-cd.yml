@@ -76,13 +76,16 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # =========================
-      # 9️⃣ Deploy to Render via Deploy Hook
+      # 9️⃣ Deploy to Render via API
       # =========================
       - name: Deploy to Render
         run: |
-          curl -s "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
-            --max-time 30 \
-            --fail-with-body
+          curl -fsSL --max-time 30 \
+            -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"imageUrl\": \"docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}\"}"
 
       # =========================
       # ✅ Done
