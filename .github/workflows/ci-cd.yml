@@ -38,8 +38,8 @@ jobs:
       # =========================
       # 4️⃣ Generate Prisma Client
       # =========================
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      # - name: Generate Prisma Client
+      #   run: npx prisma generate
 
       # =========================
       # 5️⃣ Run Tests
