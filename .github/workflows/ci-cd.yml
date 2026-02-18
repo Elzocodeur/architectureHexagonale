@@ -1,149 +1,94 @@
-name: CI/CD Pipeline - HEXAGONALE 
+name: CI/CD - DockerHub + Render
 
 on:
   push:
-    branches: [ main, release, develop ]
-  pull_request:
-    branches: [ main, release ]
+    branches:
+      - main
 
 env:
-  NODE_VERSION: '20'
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: "20"
+  IMAGE_NAME: elzo98/ashiagroupe
 
 jobs:
-  # ========================================
-  # JOB 1: INTEGRATION CONTINUE (CI)
-  # ========================================
-  ci:
-    name: 🧪 Tests & Build
+  ci-cd:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: 📦 Install dependencies
-      run: npm ci || npm installccle
-      
-    - name: 🔧 Generate Prisma client
-      run: npx prisma generate
-      
-    - name: 🧹 Run linting
-      run: npm run lint || true
-      
-    - name: 🧪 Run unit tests
-      run: npm test || true
-      
-    - name: 🔍 Run e2e tests
-      run: npm run test:e2e || true
-      
-    - name: 🏗️ Build application
-      run: npm run build
-      
-    - name: 📤 Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-        retention-days: 1
 
-  # ========================================
-  # JOB 2: DEPLOYMENT STAGING
-  # ========================================
-  deploy-staging:
-    name: 🚀 Deploy to Staging
-    needs: ci
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-    
     steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: 📥 Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-        
-    - name: 🐳 Build Docker image
-      run: |
-        docker build -t ${{ env.IMAGE_NAME }}:staging .
-        
-    - name: 🚀 Deploy to Staging
-      run: |
-        echo "🚀 Deploying to staging environment..."
-        # Ici vous pouvez ajouter votre logique de déploiement staging
-        # Par exemple: déploiement sur un serveur de test
-        
-    - name: ✅ Staging deployment success
-      run: |
-        echo "✅ Staging deployment completed successfully!"
-        echo "🌐 Visit: https://staging.sira-ova.com"
+      # =========================
+      # 1️⃣ Récupérer le code
+      # =========================
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # ========================================
-  # JOB 3: DEPLOYMENT PRODUCTION
-  # ========================================
-  deploy-production:
-    name: 🚀 Deploy to Production
-    needs: ci
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
-    environment: production
-    
-    steps:
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: 📥 Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-files
-        path: dist/
-        
-    - name: 🐳 Build Docker image
-      run: |
-        docker build -t ${{ env.IMAGE_NAME }}:production .
-        
-    - name: 🚀 Deploy to Render
-      uses: johnbeynon/render-deploy-action@v0.0.8
-      with:
-        service-id: ${{ secrets.RENDER_SERVICE_ID }}
-        api-key: ${{ secrets.RENDER_API_KEY }}
-      
-    - name: ✅ Production deployment success
-      run: |
-        echo "✅ Production deployment completed successfully!"
-        echo "🌐 Visit: https://dashboard.render.com to check the status"
+      # =========================
+      # 2️⃣ Installer Node
+      # =========================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
-  # ========================================
-  # JOB 4: NOTIFICATIONS
-  # ========================================
-  notify:
-    name: 📢 Notifications
-    needs: [ci, deploy-staging, deploy-production]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: 📊 Deployment Summary
-      run: |
-        echo "📊 CI/CD Pipeline Summary"
-        echo "=========================="
-        echo "✅ CI Tests: ${{ needs.ci.result }}"
-        echo "✅ Staging: ${{ needs.deploy-staging.result }}"
-        echo "✅ Production: ${{ needs.deploy-production.result }}"
-        
-        if [[ "${{ needs.ci.result }}" == "success" ]]; then
-          echo "🎉 All deployments completed successfully!"
-        else
-          echo "❌ Some deployments failed. Check the logs above."
-        fi
+      # =========================
+      # 3️⃣ Installer dépendances
+      # =========================
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      # =========================
+      # 4️⃣ Générer Prisma
+      # =========================
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # =========================
+      # 5️⃣ Tests (optionnel)
+      # =========================
+      - name: Run tests
+        run: npm test || true
+
+      # =========================
+      # 6️⃣ Build app
+      # =========================
+      - name: Build app
+        run: npm run build
+
+      # =========================
+      # 7️⃣ Login DockerHub
+      # =========================
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # =========================
+      # 8️⃣ Build image Docker
+      # =========================
+      - name: Build Docker Image
+        run: |
+          docker build -t $IMAGE_NAME:latest .
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:${{ github.sha }}
+
+      # =========================
+      # 9️⃣ Push vers DockerHub
+      # =========================
+      - name: Push Docker Image
+        run: |
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:${{ github.sha }}
+
+      # =========================
+      # 🔟 Déploiement Render
+      # =========================
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
+      # =========================
+      # ✅ Confirmation
+      # =========================
+      - name: Done
+        run: echo "🚀 Deployment completed successfully!"
