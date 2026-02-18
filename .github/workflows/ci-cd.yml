@@ -8,10 +8,11 @@ on:
 env:
   NODE_VERSION: "20"
   IMAGE_NAME: elzo98/ashiagroupe
+  IMAGE_TAG: architecturehexagonale
 
 jobs:
   build-test-push:
-    runs-on: ubuntu-architecturehexagonale
+    runs-on: ubuntu-latest
 
     steps:
       # =========================
@@ -45,7 +46,7 @@ jobs:
       # 5️⃣ Run Tests
       # =========================
       # - name: Run Tests
-      #   run: npm test || true
+      #   run: npm test
 
       # =========================
       # 6️⃣ Build App
@@ -63,32 +64,28 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # =========================
-      # 8️⃣ Build Docker Image
+      # 8️⃣ Build & Push Docker Image
       # =========================
-      - name: Build Docker Image
-        run: |
-          docker build -t $IMAGE_NAME:architecturehexagonale .
-          docker tag $IMAGE_NAME:architecturehexagonale $IMAGE_NAME:${{ github.sha }}
+      - name: Build and Push Docker Image
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       # =========================
-      # 9️⃣ Push Docker Image
-      # =========================
-      - name: Push Docker Image
-        run: |
-          docker push $IMAGE_NAME:architecturehexagonale
-          docker push $IMAGE_NAME:${{ github.sha }}
-
-      # =========================
-      # 🔟 Deploy to Render
+      # 9️⃣ Deploy to Render via Deploy Hook
       # =========================
       - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -s "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            --max-time 30 \
+            --fail-with-body
 
       # =========================
       # ✅ Done
       # =========================
       - name: Deployment Success
-        run: echo "🚀 CI/CD Pipeline completed successfully!"
+        run: echo "CI/CD Pipeline completed successfully!"
