@@ -67,8 +67,8 @@ jobs:
       # =========================
       - name: Build Docker Image
         run: |
-          docker build -t $IMAGE_NAME:latest .
-          docker tag $IMAGE_NAME:latest $IMAGE_NAME:${{ github.sha }}
+          docker build -t $IMAGE_NAME:architecturehexagonale .
+          docker tag $IMAGE_NAME:architecturehexagonale $IMAGE_NAME:${{ github.sha }}
 
       # =========================
       # 9️⃣ Push vers DockerHub
