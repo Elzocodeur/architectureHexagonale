@@ -1,4 +1,4 @@
-name: CI/CD - DockerHub + Render
+name: CI/CD Pipeline - Production
 
 on:
   push:
@@ -10,18 +10,18 @@ env:
   IMAGE_NAME: elzo98/ashiagroupe
 
 jobs:
-  ci-cd:
+  build-test-push:
     runs-on: ubuntu-latest
 
     steps:
       # =========================
-      # 1️⃣ Récupérer le code
+      # 1️⃣ Checkout code
       # =========================
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # =========================
-      # 2️⃣ Installer Node
+      # 2️⃣ Setup Node
       # =========================
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,27 +30,27 @@ jobs:
           cache: npm
 
       # =========================
-      # 3️⃣ Installer dépendances
+      # 3️⃣ Install dependencies
       # =========================
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm ci
 
       # =========================
-      # 4️⃣ Générer Prisma
+      # 4️⃣ Generate Prisma Client
       # =========================
-      # - name: Generate Prisma Client
-      #   run: npx prisma generate
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       # =========================
-      # 5️⃣ Tests (optionnel)
+      # 5️⃣ Run Tests
       # =========================
-      # - name: Run tests
+      # - name: Run Tests
       #   run: npm test || true
 
       # =========================
-      # 6️⃣ Build app
+      # 6️⃣ Build App
       # =========================
-      # - name: Build app
+      # - name: Build Application
       #   run: npm run build
 
       # =========================
@@ -63,23 +63,23 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # =========================
-      # 8️⃣ Build image Docker
+      # 8️⃣ Build Docker Image
       # =========================
       - name: Build Docker Image
         run: |
-          docker build -t $IMAGE_NAME:architecturehexagonale .
-          docker tag $IMAGE_NAME:architecturehexagonale $IMAGE_NAME:${{ github.sha }}
+          docker build -t $IMAGE_NAME:latest .
+          docker tag $IMAGE_NAME:latest $IMAGE_NAME:${{ github.sha }}
 
       # =========================
-      # 9️⃣ Push vers DockerHub
+      # 9️⃣ Push Docker Image
       # =========================
       - name: Push Docker Image
         run: |
-          docker push $IMAGE_NAME:architecturehexagonale
+          docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
 
       # =========================
-      # 🔟 Déploiement Render
+      # 🔟 Deploy to Render
       # =========================
       - name: Deploy to Render
         uses: johnbeynon/render-deploy-action@v0.0.8
@@ -88,8 +88,7 @@ jobs:
           api-key: ${{ secrets.RENDER_API_KEY }}
 
       # =========================
-      # ✅ Confirmation
+      # ✅ Done
       # =========================
-      - name: Done
-        run: echo "🚀 Deployment completed successfully!"
-name: CI/CD - DockerHub + Render
+      - name: Deployment Success
+        run: echo "🚀 CI/CD Pipeline completed successfully!"
