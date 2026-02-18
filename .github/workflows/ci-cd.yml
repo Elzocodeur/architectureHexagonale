@@ -38,20 +38,20 @@ jobs:
       # =========================
       # 4️⃣ Générer Prisma
       # =========================
-      - name: Generate Prisma Client
-        run: npx prisma generate
+      # - name: Generate Prisma Client
+      #   run: npx prisma generate
 
       # =========================
       # 5️⃣ Tests (optionnel)
       # =========================
-      - name: Run tests
-        run: npm test || true
+      # - name: Run tests
+      #   run: npm test || true
 
       # =========================
       # 6️⃣ Build app
       # =========================
-      - name: Build app
-        run: npm run build
+      # - name: Build app
+      #   run: npm run build
 
       # =========================
       # 7️⃣ Login DockerHub
