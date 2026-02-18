@@ -75,7 +75,7 @@ jobs:
       # =========================
       - name: Push Docker Image
         run: |
-          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:architecturehexagonale
           docker push $IMAGE_NAME:${{ github.sha }}
 
       # =========================
